@@ -1,0 +1,56 @@
+<?php
+declare(strict_types=1);
+namespace flavio100\DeathChest\listener;
+
+use pocketmine\event\player\PlayerDeathEvent;
+use pocketmine\block\BlockFactory;
+use pocketmine\block\BlockIds;
+use pocketmine\level\Position;
+use pocketmine\tile\Chest;
+use pocketmine\tile\Tile;
+
+class PlayerDeathEventListener extends BaseListener{
+	public function onPlayerDeath(PlayerDeathEvent $event):void{
+		$playerObject = $event->getPlayer();
+		$playerLevelObject = $playerObject->getLevel();
+		if($playerLevelObject !== NULL){
+			$playerX = $playerObject->getFloorX();
+			$playerY = $playerObject->getFloorY();
+			$playerZ = $playerObject->getFloorZ();
+			
+			if($playerObject->hasPermission("deathchest.use") && $this->plugin->isWorldEnabled($playerLevelObject->getFolderName())){	
+				while($playerLevelObject->getBlockIdAt($playerX, $playerY, $playerZ) !== BlockIds::AIR || $playerLevelObject->getBlockIdAt($playerX, $playerY, $playerZ+1) !== BlockIds::AIR ){
+			    	++$playerY;
+			    
+			    	if($playerY === 256){
+			    		return;
+			    	}
+		    	}
+		    	
+		    	$chestPosition = new Position($playerX, $playerY, $playerZ, $playerLevelObject);
+		        $playerLevelObject->setBlock($chestPosition, BlockFactory::get(BlockIds::CHEST));
+	         	$tile = Tile::createTile("Chest", $playerLevelObject, Chest::createNBT($chestPosition));
+	         	
+	         	$chestPosition1 = new Position($playerX, $playerY, $playerZ+1, $playerLevelObject);
+	         	$playerLevelObject->setBlock($chestPosition1, BlockFactory::get(BlockIds::CHEST));
+	         	$tile1 = Tile::createTile("Chest", $playerLevelObject, Chest::createNBT($chestPosition1));
+	         	    	
+	        	if ($tile instanceof Chest && $tile1 instanceof Chest) {
+	        		$tile->pairWith($tile1);
+	        		$tile1->pairWith($tile);
+	        			
+		   		    foreach($playerObject->getInventory()->getContents() as $item){
+		   		    	//tile will be a doublechest
+	    	    		$tile->getInventory()->addItem($item);		     		 	
+		   	    	}
+		   	    	
+		   	    	$tile->getInventory()->addItem($playerObject->getArmorInventory()->getBoots());
+		   	    	$tile->getInventory()->addItem($playerObject->getArmorInventory()->getChestplate());
+		   	    	$tile->getInventory()->addItem($playerObject->getArmorInventory()->getLeggings());
+		   	    	$tile->getInventory()->addItem($playerObject->getArmorInventory()->getHelmet());
+		    	    $event->setDrops([]);
+		    	}
+			}
+		}
+	}
+}
