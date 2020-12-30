@@ -1,0 +1,16 @@
+<?php
+declare(strict_types=1);
+namespace flavio100\DeathChest\listener;
+
+use pocketmine\event\Listener;
+use flavio100\DeathChest\Main;
+
+class BaseListener implements Listener{
+	
+	/**@var Main*/
+	protected $plugin;
+	
+	public function __construct(Main $plugin) {
+		$this->plugin = $plugin;      
+    }
+}
